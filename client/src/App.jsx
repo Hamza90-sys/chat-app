@@ -1,35 +1,27 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import LoginForm from "./components/LoginForm";
 import RegisterForm from "./components/RegisterForm";
+import ChatRoomList from "./components/ChatRoomList";
+import CreateChatRoomForm from "./components/CreateChatRoomForm";
+import ChatRoom from "./components/ChatRoom";
 import "./App.css";
 
-function Home() {
+function ProtectedRoute({ children }) {
   const user = JSON.parse(localStorage.getItem("user") || "null");
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    window.location.href = "/login";
-  };
-
   if (!user) return <Navigate to="/login" />;
-
-  return (
-    <div className="home-container">
-      <h1>Welcome, {user.username}!</h1>
-      <p>You are logged in to the Chat App.</p>
-      <button onClick={handleLogout}>Logout</button>
-    </div>
-  );
+  return children;
 }
 
 function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Navigate to="/rooms" />} />
         <Route path="/login" element={<LoginForm />} />
         <Route path="/register" element={<RegisterForm />} />
+        <Route path="/rooms" element={<ProtectedRoute><ChatRoomList /></ProtectedRoute>} />
+        <Route path="/rooms/create" element={<ProtectedRoute><CreateChatRoomForm /></ProtectedRoute>} />
+        <Route path="/rooms/:id" element={<ProtectedRoute><ChatRoom /></ProtectedRoute>} />
       </Routes>
     </Router>
   );

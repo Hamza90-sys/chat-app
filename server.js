@@ -5,6 +5,8 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const authRoutes = require("./routes/auth");
+const chatRoomRoutes = require("./routes/chatRooms");
+const ChatRoom = require("./models/ChatRoom");
 
 const app = express();
 const server = http.createServer(app);
@@ -25,6 +27,7 @@ app.use(express.static("public"));
 
 // --------------- Routes ---------------
 app.use("/api/auth", authRoutes);
+app.use("/api/rooms", chatRoomRoutes);
 
 // --------------- MongoDB Connection ---------------
 const MONGO_URI = "mongodb://localhost:27017/chat-app";
@@ -37,6 +40,47 @@ mongoose
 // --------------- Socket.io ---------------
 io.on("connection", (socket) => {
   console.log(`🟢 User connected: ${socket.id}`);
+
+  // Join a chat room via Socket.IO
+  socket.on("joinRoom", async ({ roomId, username }) => {
+    socket.join(roomId);
+    console.log(`${username} joined room ${roomId}`);
+
+    // Broadcast updated member list to the room
+    try {
+      const room = await ChatRoom.findById(roomId).populate("members", "username");
+      if (room) {
+        io.to(roomId).emit("roomUsers", {
+          roomId,
+          members: room.members,
+        });
+      }
+    } catch (err) {
+      console.error("Socket joinRoom error:", err);
+    }
+
+    socket.to(roomId).emit("userJoined", { username, roomId });
+  });
+
+  // Leave a chat room via Socket.IO
+  socket.on("leaveRoom", async ({ roomId, username }) => {
+    socket.leave(roomId);
+    console.log(`${username} left room ${roomId}`);
+
+    try {
+      const room = await ChatRoom.findById(roomId).populate("members", "username");
+      if (room) {
+        io.to(roomId).emit("roomUsers", {
+          roomId,
+          members: room.members,
+        });
+      }
+    } catch (err) {
+      console.error("Socket leaveRoom error:", err);
+    }
+
+    socket.to(roomId).emit("userLeft", { username, roomId });
+  });
 
   socket.on("disconnect", () => {
     console.log(`🔴 User disconnected: ${socket.id}`);
