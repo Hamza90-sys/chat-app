@@ -27,8 +27,7 @@ app.use(express.static("public"));
 app.use("/api/auth", authRoutes);
 
 // --------------- MongoDB Connection ---------------
-const MONGO_URI =
-  "mongodb+srv://hamza__000:RtPiuakFGMQOW49H@cluster0.uikvfsd.mongodb.net/chat-app";
+const MONGO_URI = "mongodb://localhost:27017/chat-app";
 
 mongoose
   .connect(MONGO_URI)
