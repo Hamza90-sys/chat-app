@@ -7,6 +7,7 @@ const cookieParser = require("cookie-parser");
 const authRoutes = require("./routes/auth");
 const chatRoomRoutes = require("./routes/chatRooms");
 const ChatRoom = require("./models/ChatRoom");
+const Message = require("./models/Message");
 
 const app = express();
 const server = http.createServer(app);
@@ -60,6 +61,52 @@ io.on("connection", (socket) => {
     }
 
     socket.to(roomId).emit("userJoined", { username, roomId });
+  });
+
+  // Send a message
+  socket.on("sendMessage", async ({ roomId, userId, username, content }) => {
+    try {
+      const message = await Message.create({
+        room: roomId,
+        sender: userId,
+        content,
+      });
+
+      const populated = await message.populate("sender", "username");
+
+      io.to(roomId).emit("newMessage", {
+        _id: populated._id,
+        content: populated.content,
+        sender: populated.sender,
+        room: roomId,
+        createdAt: populated.createdAt,
+      });
+    } catch (err) {
+      console.error("Socket sendMessage error:", err);
+    }
+  });
+
+  // Fetch message history for a room
+  socket.on("getMessages", async ({ roomId }) => {
+    try {
+      const messages = await Message.find({ room: roomId })
+        .populate("sender", "username")
+        .sort({ createdAt: 1 })
+        .limit(100);
+
+      socket.emit("messageHistory", { roomId, messages });
+    } catch (err) {
+      console.error("Socket getMessages error:", err);
+    }
+  });
+
+  // Typing indicator
+  socket.on("typing", ({ roomId, username }) => {
+    socket.to(roomId).emit("userTyping", { roomId, username });
+  });
+
+  socket.on("stopTyping", ({ roomId, username }) => {
+    socket.to(roomId).emit("userStopTyping", { roomId, username });
   });
 
   // Leave a chat room via Socket.IO
