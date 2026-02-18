@@ -32,7 +32,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/rooms", chatRoomRoutes);
 
 // --------------- MongoDB Connection ---------------
-const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/chat-app";
+const MONGO_URI = process.env.MONGO_URI || "mongodb+srv://hamza__000:<db_password>@cluster0.uikvfsd.mongodb.net/chat-app?retryWrites=true&w=majority";
 
 mongoose
   .connect(MONGO_URI)
