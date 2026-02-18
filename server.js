@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require("express");
 const http = require("http");
 const { Server } = require("socket.io");
@@ -31,7 +32,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/rooms", chatRoomRoutes);
 
 // --------------- MongoDB Connection ---------------
-const MONGO_URI = "mongodb://localhost:27017/chat-app";
+const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/chat-app";
 
 mongoose
   .connect(MONGO_URI)
